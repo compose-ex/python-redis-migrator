@@ -26,13 +26,16 @@ from redis.exceptions import ResponseError
 @click.argument('dsthostport')
 @click.option('--db', default=0, help='Redis db number, default 0')
 @click.option('--flush', default=False, is_flag=True, help='Delete all keys from destination before migrating')
-def migrate(srchost, srchostauth, srchostport, dsthost, dsthostauth, dsthostport, db, flush):
+@click.option('--sslsrc',default=False, is_flag=True, help='Set TLS/SSL flag for source')
+@click.option('--ssldst',default=False, is_flag=True, help='Set TLS/SSL flag for destination')
+
+def migrate(srchost, srchostauth, srchostport, dsthost, dsthostauth, dsthostport, db, flush, sslsrc, ssldst):
     if srchost == dsthost:
-        print 'Source and destination must be different.'
+        print('Source and destination must be different.')
         return
 
-    source = redis.Redis(host=srchost, port=srchostport, db=db, password=srchostauth)
-    dest = redis.Redis(host=dsthost, port=dsthostport, db=db, password=dsthostauth)
+    source = redis.Redis(host=srchost, port=srchostport, db=db, password=srchostauth, ssl=sslsrc)
+    dest = redis.Redis(host=dsthost, port=dsthostport, db=db, password=dsthostauth, ssl=ssldst)
 
     if flush:
         dest.flushdb()
@@ -40,7 +43,7 @@ def migrate(srchost, srchostauth, srchostport, dsthost, dsthostauth, dsthostport
     size = source.dbsize()
 
     if size == 0:
-        print 'No keys found.'
+        print('No keys found.')
         return
 
     progress_widgets = ['%d keys: ' % size, Percentage(), ' ', Bar(), ' ', ETA()]
@@ -73,12 +76,12 @@ def migrate(srchost, srchostauth, srchostport, dsthost, dsthostauth, dsthostport
 
         results = pipeline.execute(False)
         for key, result in zip(keys, results):
-            if result != 'OK':
-                e = result
-                if hasattr(e, 'message') and (e.message == 'BUSYKEY Target key name already exists.' or e.message == 'Target key name is busy.'):
+            if result != b'OK':
+                e=result
+                if hasattr(e,"args") and e.args[0] == "BUSYKEY Target key name already exists." or e.args[0] == 'Target key name is busy.':
                     already_existing += 1
                 else:
-                    print 'Key failed:', key, `data`, `result`
+                    print('Key failed:', key, 'data', result)
                     raise e
 
         if cursor == 0:
@@ -88,8 +91,8 @@ def migrate(srchost, srchostauth, srchostport, dsthost, dsthostauth, dsthostport
         pbar.update(min(size, cnt))
 
     pbar.finish()
-    print 'Keys disappeared on source during scan:', non_existing
-    print 'Keys already existing on destination:', already_existing
+    print('Keys disappeared on source during scan:', non_existing)
+    print('Keys already existing on destination:', already_existing)
 
 if __name__ == '__main__':
     migrate()
