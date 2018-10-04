@@ -3,9 +3,11 @@ this project assists with migrating redis servers based on a a gist from [migrat
 
 This version has been ported to Python 3.
 
-##
+## Installation
 
-`pip3 install -r requirements.txt`
+```
+pip3 install -r requirements.txt
+```
 
 ## Usage
 
