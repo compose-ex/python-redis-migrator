@@ -12,6 +12,6 @@ pip3 install -r requirements.txt
 ## Usage
 
 ```
-python3 migrate-redis.py <srchost> <srcpassword> <srcport> <desthost> <destpassword> <destport> [-sslsrc] [-ssldst] [--flush] [--db=0]
+python3 migrate-redis.py <srchost> <srcpassword> <srcport> <desthost> <destpassword> <destport> [--sslsrc] [--ssldst] [--flush] [--db=0]
 ```
 
